@@ -10,7 +10,6 @@ import unsw.response.models.FileInfoResponse;
 import unsw.utils.Angle;
 
 public class BlackoutController {
-    private final double jupiterRad = 69911;
     private List<Device> devices = new ArrayList<Device>();
     private List<Satellite> satellites = new ArrayList<Satellite>();
 
@@ -76,31 +75,26 @@ public class BlackoutController {
 
     public EntityInfoResponse getInfo(String id) {
         // TODO: Task 1h)
+        Machine machine = new Machine("id", "id", 0, null);
         // Loop thru Device list
         final Map<String, FileInfoResponse> fileMap = new HashMap<>();
         for (Device device : devices) {
             if (device.getId() == id) {
-                List<File> files = device.getFile();
-                for (File file: files) {
-                    fileMap.put(file.getName(), new FileInfoResponse(file.getName(),
-                    file.getContent(), file.getContent().length(), true));
-                }
-                return new EntityInfoResponse(id, device.getPos(), jupiterRad, device.getType(), fileMap);
+                machine = device; 
             }
         }
         // Loop thru Satellite list
         for (Satellite satellite : satellites) {
             if (satellite.getId() == id) {
-                List<File> files = satellite.getFile();
-                for (File file: files) {
-                    fileMap.put(file.getName(), new FileInfoResponse(file.getName(),
-                    file.getContent(), file.getContent().length(), true));
-                }
-                return new EntityInfoResponse(id, satellite.getPos(),
-                satellite.getHeight(), satellite.getType(), fileMap);
+                machine = satellite;
             }
         }
-        return null;
+        List<File> files = machine.getFile();
+        for (File file: files) {
+            fileMap.put(file.getName(), new FileInfoResponse(file.getName(),
+            file.getContent(), file.getContent().length(), true));
+        }
+        return new EntityInfoResponse(id, machine.getPos(), machine.getHeight(), machine.getType(), fileMap);
     }
 
     public void simulate() {

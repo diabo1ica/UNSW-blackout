@@ -7,12 +7,14 @@ public class Machine {
     private List<File> files = new ArrayList<File>();
     private String id;
     private String sType;
+    private double height;
     private Angle position;
 
-    public Machine(String deviceId, String type, Angle position) {
+    public Machine(String deviceId, String type, double height, Angle position) {
         this.id = deviceId;
         this.sType = type;
         this.position = position;
+        this.height = height;
     }
 
     public void setFile(File file) {
@@ -33,5 +35,9 @@ public class Machine {
 
     public String getId() {
         return id;
+    }
+
+    public double getHeight() {
+        return height;
     }
 }
