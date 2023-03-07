@@ -1,4 +1,5 @@
 package unsw.blackout;
+
 import unsw.utils.Angle;
 import java.util.ArrayList;
 import java.util.List;
@@ -6,13 +7,12 @@ import java.util.List;
 public class Machine {
     private List<File> files = new ArrayList<File>();
     private String id;
-    private String sType;
     private double height;
     private Angle position;
+    private int range;
 
-    public Machine(String deviceId, String type, double height, Angle position) {
+    public Machine(String deviceId, double height, Angle position, int range) {
         this.id = deviceId;
-        this.sType = type;
         this.position = position;
         this.height = height;
     }
@@ -25,12 +25,12 @@ public class Machine {
         return files;
     }
 
-    public String getType() {
-        return sType;
-    }
-
     public Angle getPos() {
         return position;
+    }
+
+    public void setPos(Angle pos) {
+        this.position = pos;
     }
 
     public String getId() {
@@ -39,5 +39,9 @@ public class Machine {
 
     public double getHeight() {
         return height;
+    }
+
+    public int getRange() {
+        return range;
     }
 }
