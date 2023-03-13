@@ -2,7 +2,12 @@ package unsw.blackout;
 
 import unsw.utils.Angle;
 
-public class StandardSatellite extends Satellite {
+public class StandardSatellite extends FileSatellite {
+    private int sendSpeed = 1;
+    private int receiveSpeed = 1;
+    private int capacity = 0;
+    private int maxNumFile = 3;
+    private int maxFileCapacity = 80;
     /*
     * range = 150000;
     * receiveSpeed = 1;
@@ -13,6 +18,6 @@ public class StandardSatellite extends Satellite {
     */
 
     public StandardSatellite(String satelliteId, double height, Angle position) {
-        super(satelliteId, height, position, 150000, 2500, 1, 1, 3, 80);
+        super(satelliteId, height, position, 150000, -2500);
     }
 }

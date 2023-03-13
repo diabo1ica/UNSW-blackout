@@ -1,14 +1,11 @@
 package unsw.blackout;
 
 import unsw.utils.Angle;
-import java.util.ArrayList;
-import java.util.List;
 
-public class Machine {
-    private List<File> files = new ArrayList<File>();
+abstract class Machine {
     private String id;
     private double height;
-    private Angle position;
+    protected Angle position;
     private int range;
 
     public Machine(String deviceId, double height, Angle position, int range) {
@@ -17,20 +14,16 @@ public class Machine {
         this.height = height;
     }
 
-    public void setFile(File file) {
-        files.add(file);
-    }
-
-    public List<File> getFile() {
-        return files;
-    }
-
     public Angle getPos() {
         return position;
     }
 
-    public void setPos(Angle pos) {
-        this.position = pos;
+    public void setPos(Angle angle) {
+        Angle newAngle = position.add(angle);
+        if (newAngle.compareTo(Angle.fromDegrees(0)) == -1) {
+            newAngle = newAngle.add(Angle.fromDegrees(360));
+        }
+        this.position = newAngle;
     }
 
     public String getId() {
