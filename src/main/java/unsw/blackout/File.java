@@ -3,12 +3,13 @@ package unsw.blackout;
 public class File {
     private String filename;
     private String content;
-    private int progress = 0;
+    private int finalStrLen = 0;
     private boolean complete = false;
 
-    public File(String filename, String content, boolean state) {
+    public File(String filename, String content, int finalStrLen, boolean state) {
         this.filename = filename;
         this.content = content;
+        this.finalStrLen = finalStrLen;
         this.complete = state;
     }
 
@@ -18,6 +19,23 @@ public class File {
 
     public String getContent() {
         return content;
+    }
+
+    public void addContent(String endContent, int bandwidth) {
+        System.out.println("bandwidth");
+        System.out.println(bandwidth);
+        int increment = content.length() + bandwidth;
+        System.out.println("increment");
+        System.out.println(increment);
+        if (increment + content.length() >= finalStrLen) {
+            increment = finalStrLen;
+            this.complete = true;
+        }
+        content = content + endContent.substring(content.length(), increment);
+    }
+
+    public int getFinalStrLen() {
+        return finalStrLen;
     }
 
     public boolean isComplete() {
@@ -32,7 +50,4 @@ public class File {
         return (this.content.length() >= content.length());
     }
 
-    public void updateProgress(int prog) {
-        progress =+ prog;
-    }
 }

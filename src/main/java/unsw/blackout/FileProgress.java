@@ -3,12 +3,14 @@ package unsw.blackout;
 public class FileProgress {
     private String id;
     private String type;
+    private File file;
     private String fileName;
 
-    public FileProgress(String id, String type, String fileName) {
+    public FileProgress(String id, String type, File file) {
         this.id = id;
         this.type = type;
-        this.fileName = fileName;
+        this.file = file;
+        this.fileName = file.getName();
     }
 
     public String getId() {
@@ -19,7 +21,16 @@ public class FileProgress {
         return type;
     }
 
+    public File getFile() {
+        return file;
+    }
+
     public String getFileName() {
         return fileName;
     }
+
+    public String getFileType() {
+        return type;
+    }
+
 }

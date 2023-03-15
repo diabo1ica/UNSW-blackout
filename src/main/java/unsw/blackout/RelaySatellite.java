@@ -37,6 +37,9 @@ public class RelaySatellite extends Satellite {
         if (newAngle.compareTo(Angle.fromDegrees(0)) == -1) {
             newAngle = newAngle.add(Angle.fromDegrees(360));
         }
+        if (newAngle.compareTo(Angle.fromDegrees(360)) >= 0) {
+            newAngle = newAngle.subtract(Angle.fromDegrees(360));
+        }
         position = newAngle;
     }
 

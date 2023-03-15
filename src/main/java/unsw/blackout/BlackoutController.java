@@ -2,7 +2,8 @@ package unsw.blackout;
 
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.Optional;
+import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 import java.util.HashMap;
 import java.util.List;
 import unsw.blackout.FileTransferException.*;
@@ -12,8 +13,9 @@ import unsw.utils.Angle;
 import unsw.utils.MathsHelper;
 
 public class BlackoutController {
-    private List<Device> devices = new ArrayList<Device>();
-    private List<Satellite> satellites = new ArrayList<Satellite>();
+    private WorldState ws = new WorldState();
+    private List<Device> devices = ws.getDevices();
+    private List<Satellite> satellites = ws.getSatellites();
 
     public void createDevice(String deviceId, String type, Angle position) {
         // TODO: Task 1a)
@@ -79,61 +81,101 @@ public class BlackoutController {
 
     public void addFileToDevice(String deviceId, String filename, String content) {
         // TODO: Task 1g)
-        File file = new File(filename, content, true);
+        File file = new File(filename, content, content.length(), true);
         Device device = this.getDeviceById(deviceId);
         device.setFile(file);
     }
 
     public EntityInfoResponse getInfo(String id) {
         // TODO: Task 1h)
-        // Loop thru Device list
-        EntityInfoResponse eir;
-        try {
-            eir = getSatelliteInfo(id);
-        }
-        catch (Exception e) {
-            eir = getDeviceInfo(id);
-        }
-        return eir;
+        return getMachInfo(id);
     }
 
-    public EntityInfoResponse getDeviceInfo(String id) {
-        Device device = getDeviceById(id);
-        if (device.equals(null)) {
-            return null;
-        }
+    public EntityInfoResponse getMachInfo(String id) {
+        Machine m = findMachById(id);
         Map<String, FileInfoResponse> fileMap = new HashMap<>();
-        for (File file : device.getFile()) {
-            FileInfoResponse fir = new FileInfoResponse(file.getName(), file.getContent(), file.getContent().length(),
-                    true);
-            fileMap.put(file.getName(), fir);
-        }
-        return new EntityInfoResponse(id, device.getPos(), device.getHeight(), getType(device), fileMap);
-    }
-
-    public EntityInfoResponse getSatelliteInfo(String id) {
-        Satellite s = getSatelliteById(id);
-        Map<String, FileInfoResponse> fileMap = new HashMap<>();
-        if (!(s instanceof RelaySatellite)) {
-            FileSatellite fs = (FileSatellite) s;
-            for (File file : fs.getFile()) {
-                FileInfoResponse fir = new FileInfoResponse(file.getName(), file.getContent(), file.getContent().length(),
-                        true);
+        if (!(m instanceof RelaySatellite)) {
+            FileTransfer ft = (FileTransfer) m;
+            for (File file : ft.getFile()) {
+                int len = file.getFinalStrLen();
+                FileInfoResponse fir = new FileInfoResponse(file.getName(), file.getContent(), len,
+                file.isComplete());
                 fileMap.put(file.getName(), fir);
             }
-            return new EntityInfoResponse(id, fs.getPos(), fs.getHeight(), getType(fs), fileMap);
         }
-        else {
-            return new EntityInfoResponse(id, s.getPos(), s.getHeight(), getType(s), fileMap);
-        }
+        return new EntityInfoResponse(id, m.getPos(), m.getHeight(), getType(m), fileMap);
     }
 
     public void simulate() {
         // TODO: Task 2a)
         for (Satellite s: satellites) {
-            double displacement = s.getSpeed() / s.getHeight();
-            Angle angle = Angle.fromRadians(displacement);
-            s.setPos(angle);
+            updateSatPosition(s);
+        }
+        updateFileState(machList());
+    }
+
+    public void updateSatPosition(Satellite s) {
+        double displacement = s.getSpeed() / s.getHeight();
+        Angle angle = Angle.fromRadians(displacement);
+        s.setPos(angle);
+    }
+
+    public void updateFileState(List<Machine> mach) {
+        setBandwidthStateAll(mach);
+        for (FileTransfer ft: fileTransferList()) {
+            // TODO: fix this
+            BandwidthState bws;
+            try {
+                bws = ws.getBwState(ft.getId());
+            }
+            catch (Exception e) {
+                continue;
+            }
+            for (File f: ft.getIncompleteFiles()) {
+                List<FileProgress> fromFp = ft.getFileProgressByType("from");
+                FileProgress fp = fromFp.stream().filter(n -> n.getFileName().equals(f.getName())).findAny().get();
+                String id = fp.getId();
+                BandwidthState bwsFrom = ws.getBwState(id);
+                File file = fp.getFile();
+                int bandwidth = Math.min(bws.getReceiveBandwidth(), bwsFrom.getSendBandwidth());
+                f.addContent(file.getContent(), bandwidth);
+                if (f.isComplete()) {
+                    ft.removeProgress(f.getName());
+                }
+            }
+        }
+    }
+
+    public void setBandwidthStateAll(List<Machine> mach) {
+        ws.resetBwState();
+        for (FileTransfer ft: fileTransferList()) {
+            int nReceive;
+            int nSend;
+            int sendSpeed = 0;
+            int receiveSpeed = 0;
+
+            try {
+                nReceive = ft.getFileProgressByType("from").size();
+                receiveSpeed = ft.getReceiveSpeed();
+            }
+            catch (Exception e) {
+                nReceive = 0;
+            }
+
+            try {
+                nSend = ft.getFileProgressByType("to").size();
+                sendSpeed = ft.getSendSpeed();
+            }
+            catch (Exception e) {
+                nSend = 0;
+            }
+
+            if ((nReceive == 0 && nSend == 0) || ft instanceof RelaySatellite) {
+                continue;
+            }
+
+            BandwidthState bws = new BandwidthState(ft.getId(), div(receiveSpeed, nReceive), div(sendSpeed, nSend));
+            ws.addBwState(bws);
         }
     }
 
@@ -143,6 +185,8 @@ public class BlackoutController {
      */
     public void simulate(int numberOfMinutes) {
         for (int i = 0; i < numberOfMinutes; i++) {
+            System.out.print("i");
+            System.out.println(i);
             simulate();
         }
     }
@@ -156,18 +200,23 @@ public class BlackoutController {
         catch (Exception e) {
             mach = getSatelliteById(id);
         }
-        List<String> list = entitiesInRange(mach);
+        boolean isStandardSatellite = false;
+        if (mach instanceof StandardSatellite) {
+            isStandardSatellite = true;
+        }
+        List<String> list = entitiesInRange(mach, isStandardSatellite);
         if (list.contains(mach.getId())) {
             list.remove(mach.getId());
         }
         return list;
     }
 
-    public List<String> entitiesInRange(Machine mach) {
+    // TODO: If desktop 
+    public List<String> entitiesInRange(Machine mach, boolean isStandardSatellite) {
         List<String> entityList = new ArrayList<String>();
         for (Device d: devices) {
             if (MathsHelper.isVisible(mach.getHeight(), mach.getPos(), d.getPos()) &&
-            !(mach instanceof StandardSatellite && d instanceof DesktopDevice) &&
+            !(isStandardSatellite && d instanceof DesktopDevice) &&
             isInRange(mach, d) &&
             !entityList.contains(d.getId())) {
                 entityList.add(d.getId());
@@ -177,8 +226,11 @@ public class BlackoutController {
             if (MathsHelper.isVisible(mach.getHeight(), mach.getPos(), s.getHeight(), s.getPos()) &&
             isInRange(mach, s) &&
             !entityList.contains(s.getId())) {
-                if (s instanceof RelaySatellite) {
-                    entityList.addAll(entitiesInRange(s));
+                if (s instanceof RelaySatellite && mach instanceof StandardSatellite) {
+                    entityList.addAll(entitiesInRange(s, true));
+                }
+                else if (s instanceof RelaySatellite) {
+                    entityList.addAll(entitiesInRange(s, isStandardSatellite));
                 }
                 else {
                     entityList.add(s.getId());
@@ -193,47 +245,43 @@ public class BlackoutController {
         File file;
         Machine from = findMachById(fromId);
         Machine to = findMachById(toId);
-        if (from instanceof FileTransfer) {
-            FileTransfer i = (FileTransfer) from;
-            try {
-                file = i.getFile().stream().filter(f -> f.getName().equals(fileName)).findAny().get();
-            }
-            catch (Exception e) {
-                throw new VirtualFileNotFoundException("File doesn't exist from id: " + fromId);
-            }
-        }
-        else {
+        if (!(from instanceof FileTransfer) || !(to instanceof FileTransfer) ||
+        (!communicableEntitiesInRange(fromId).contains(toId))) {
             return;
         }
-        if (to instanceof FileTransfer) {
-            // typecast
-            FileTransfer i = (FileTransfer) to;
-            Optional<File> op = Optional.of(i.getFile().stream()
-            .filter(f -> f.getName().equals(fileName)).findAny().get());
-            if (op.isPresent()) {
-                throw new VirtualFileAlreadyExistsException("File already exists in id: " + toId);
-            }
-            i.checkFileConstraint(i.getFile().stream().filter(f -> f.getName().equals(fileName)).findAny().get());
-            File newFile = new File(file.getName(), "", false);
-            i.setFile(newFile);
+        FileTransfer ftFrom = (FileTransfer) from;
+        FileTransfer ftTo = (FileTransfer) to;
+        
+        try {
+            file = ftFrom.getFile().stream().filter(f -> f.getName().equals(fileName)).findAny().get();
         }
-        // Update file progress
-        if (from instanceof FileSatellite) {
-            FileSatellite fs = (FileSatellite) from;
-            fs.addFileProgress(new FileProgress(toId, "to", fileName));
+        catch (Exception e) {
+            throw new VirtualFileNotFoundException("File doesn't exist from id: " + fromId);
         }
-        else {
-            Device d = (Device) from;
-            d.addFileProgress(new FileProgress(toId, "to", fileName));
+
+        if (ftFrom.getSendSpeed() < ftFrom.getFileProgressByType("to").size()) {
+            throw new VirtualFileNoBandwidthException("Send bandwidth exceeded for id" + ftFrom.getId());
         }
-        if (to instanceof FileSatellite) {
-            FileSatellite fs = (FileSatellite) from;
-            fs.addFileProgress(new FileProgress(fromId, "from", fileName));
+        if (ftTo.getReceiveSpeed() < ftTo.getFileProgressByType("from").size()) {
+            throw new VirtualFileNoBandwidthException("Receive bandwidth exceeded for id" + ftTo.getId());
         }
-        else {
-            Device d = (Device) from;
-            d.addFileProgress(new FileProgress(fromId, "from", fileName));
+
+        try {
+            ftTo.getFile().stream().filter(f -> f.getName().equals(fileName)).findAny().get();
+            throw new VirtualFileAlreadyExistsException("File already exists in id: " + toId);
         }
+        catch (VirtualFileAlreadyExistsException e) {
+            throw new VirtualFileAlreadyExistsException("File already exists in id: " + toId);
+        }
+        catch (Exception e) {
+            ftTo.checkFileConstraint(file);
+            File newFile = new File(file.getName(), "", file.getContent().length(), false);
+            ftTo.setFile(newFile);
+        }
+
+        // Init file progress
+        ftFrom.addFileProgress(new FileProgress(toId, "to", file));
+        ftTo.addFileProgress(new FileProgress(fromId, "from", file));
     }
 
     public void createDevice(String deviceId, String type, Angle position, boolean isMoving) {
@@ -251,6 +299,17 @@ public class BlackoutController {
         listOfMachines.addAll(devices);
         listOfMachines.addAll(satellites);
         return listOfMachines;
+    }
+
+    public List<FileTransfer> fileTransferList() {
+        List<Machine> fileMachs =  machList().stream().filter(m -> m instanceof FileTransfer)
+        .collect(Collectors.toList());
+        List<FileTransfer> fileTransferList = new ArrayList<FileTransfer>();
+        for (Machine fm: fileMachs) {
+            FileTransfer ft = (FileTransfer) fm;
+            fileTransferList.add(ft);
+        }
+        return fileTransferList;
     }
 
     public Machine findMachById(String id) {
@@ -278,5 +337,12 @@ public class BlackoutController {
     public boolean isInRange(Machine m1, Machine m2) {
         return MathsHelper.getDistance(m1.getHeight(), m1.getPos(), m1.getHeight(), m2.getPos()) >= 
         Math.min(m1.getRange(), m2.getRange());
+    }
+
+    public int div(int a, int b) {
+        if (b == 0) {
+            b = 1;
+        }
+        return a/b;
     }
 }

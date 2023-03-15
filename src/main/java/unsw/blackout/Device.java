@@ -25,6 +25,10 @@ abstract class Device extends Machine implements FileTransfer{
         return fListProgress;
     }
 
+    public FileProgress getFileProgressByFilename(String fileName) {
+        return fListProgress.stream().filter(fp -> fp.getFileName().equals(fileName)).findAny().get();
+    }
+
     public void addFileProgress(FileProgress fileProgress) {
         fListProgress.add(fileProgress);
     }

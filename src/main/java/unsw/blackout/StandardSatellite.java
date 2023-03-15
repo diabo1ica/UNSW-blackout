@@ -3,11 +3,6 @@ package unsw.blackout;
 import unsw.utils.Angle;
 
 public class StandardSatellite extends FileSatellite {
-    private int sendSpeed = 1;
-    private int receiveSpeed = 1;
-    private int capacity = 0;
-    private int maxNumFile = 3;
-    private int maxFileCapacity = 80;
     /*
     * range = 150000;
     * receiveSpeed = 1;
@@ -19,5 +14,19 @@ public class StandardSatellite extends FileSatellite {
 
     public StandardSatellite(String satelliteId, double height, Angle position) {
         super(satelliteId, height, position, 150000, -2500);
+        this.sendSpeed = 1;
+        this.receiveSpeed = 1;
+        this.maxNumFile = 3;
+        this.maxFileCapacity = 80;
+    }
+
+    @Override
+    public int getSendSpeed() {
+        return sendSpeed;
+    }
+
+    @Override
+    public int getReceiveSpeed() {
+        return receiveSpeed;
     }
 }

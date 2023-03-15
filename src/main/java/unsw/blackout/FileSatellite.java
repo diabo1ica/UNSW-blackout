@@ -10,11 +10,10 @@ import unsw.blackout.FileTransferException.*;
 abstract class FileSatellite extends Satellite implements FileTransfer{
     private List<File> files = new ArrayList<File>();
     private List<FileProgress> fListProgress = new ArrayList<FileProgress>();
-    private int sendSpeed;
-    private int receiveSpeed;
-    private int capacity;
-    private int maxNumFile;
-    private int maxFileCapacity;
+    protected int sendSpeed;
+    protected int receiveSpeed;
+    protected int maxNumFile;
+    protected int maxFileCapacity;
 
     public FileSatellite(String satelliteId, double height, Angle position, int range, int speed) {
         super(satelliteId, height, position, range, speed);
@@ -30,6 +29,10 @@ abstract class FileSatellite extends Satellite implements FileTransfer{
 
     public List<FileProgress> getListProgress() {
         return fListProgress;
+    }
+
+    public FileProgress getFileProgressByFilename(String fileName) {
+        return fListProgress.stream().filter(fp -> fp.getFileName().equals(fileName)).findAny().get();
     }
 
     public void addFileProgress(FileProgress fileProgress) {
@@ -52,21 +55,24 @@ abstract class FileSatellite extends Satellite implements FileTransfer{
         }
     }
 
+    @Override
     public int getSendSpeed() {
         return sendSpeed;
     }
 
+    @Override
     public int getReceiveSpeed() {
         return receiveSpeed;
     }
 
     @Override
-    public boolean checkFileConstraint(File newFile) throws FileTransferException{
+    public boolean checkFileConstraint(File newFile) throws FileTransferException {
+        int capacity = 0;
         for (File file : files) {
             capacity = file.getContent().length() + capacity;
         }
         capacity = capacity + newFile.getContent().length();
-        if (files.size() < maxNumFile) {
+        if (files.size() >= maxNumFile) {
             throw new VirtualFileNoStorageSpaceException("Max Files Reached");
         }
         if (capacity > maxFileCapacity) {
