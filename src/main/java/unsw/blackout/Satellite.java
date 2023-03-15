@@ -10,6 +10,16 @@ public class Satellite extends Machine {
         this.speed = speed;
     }
 
+    public void updatePos() {
+        double displacement = this.getSpeed() / this.getHeight();
+        Angle angle = Angle.fromRadians(displacement);
+        Angle newAngle = position.add(angle);
+        if (newAngle.compareTo(Angle.fromDegrees(0)) == -1) {
+            newAngle = newAngle.add(Angle.fromDegrees(360));
+        }
+        this.position = newAngle;
+    }
+
     public int getSpeed() {
         return speed;
     }

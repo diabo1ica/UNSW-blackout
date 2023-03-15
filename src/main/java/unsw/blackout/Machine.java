@@ -1,8 +1,9 @@
 package unsw.blackout;
 
 import unsw.utils.Angle;
+import unsw.utils.MathsHelper;
 
-abstract class Machine {
+abstract class Machine implements ConnectionBehaviour{
     private String id;
     private double height;
     protected Angle position;
@@ -18,12 +19,12 @@ abstract class Machine {
         return position;
     }
 
-    public void setPos(Angle angle) {
-        Angle newAngle = position.add(angle);
-        if (newAngle.compareTo(Angle.fromDegrees(0)) == -1) {
-            newAngle = newAngle.add(Angle.fromDegrees(360));
+    public boolean visibleInRange(Machine m) {
+        if (MathsHelper.isVisible(this.getHeight(), this.getPos(), m.getHeight(), m.getPos()) &&
+        (this.isValidTransferType(m)) && isInRange(this, m)) {
+            return true;
         }
-        this.position = newAngle;
+        return false;
     }
 
     public String getId() {

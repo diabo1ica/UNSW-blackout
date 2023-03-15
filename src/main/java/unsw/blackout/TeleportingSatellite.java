@@ -22,7 +22,9 @@ public class TeleportingSatellite extends FileSatellite {
 
     // TODO: write compare to 180 degrees method
     @Override
-    public void setPos(Angle angle) {
+    public void updatePos() {
+        double displacement = this.getSpeed() / this.getHeight();
+        Angle angle = Angle.fromRadians(displacement);
         Angle newAngle = position.add(angle);
         if ((position.compareTo(Angle.fromDegrees(180)) <= 0 &&
         newAngle.compareTo(Angle.fromDegrees(180)) >= 0) ||

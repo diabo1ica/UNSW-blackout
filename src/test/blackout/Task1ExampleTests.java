@@ -34,8 +34,8 @@ public class Task1ExampleTests {
         controller.createDevice("DeviceB", "LaptopDevice", Angle.fromDegrees(180));
         controller.createDevice("DeviceC", "DesktopDevice", Angle.fromDegrees(330));
 
-        assertListAreEqualIgnoringOrder(Arrays.asList("Satellite1"), controller.listSatelliteIds());
         assertListAreEqualIgnoringOrder(Arrays.asList("DeviceA", "DeviceB", "DeviceC"), controller.listDeviceIds());
+        assertListAreEqualIgnoringOrder(Arrays.asList("Satellite1"), controller.listSatelliteIds());
 
         assertEquals(new EntityInfoResponse("Satellite1", Angle.fromDegrees(340), 100 + RADIUS_OF_JUPITER,
                 "StandardSatellite"), controller.getInfo("Satellite1"));

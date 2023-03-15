@@ -22,11 +22,7 @@ public class File {
     }
 
     public void addContent(String endContent, int bandwidth) {
-        System.out.println("bandwidth");
-        System.out.println(bandwidth);
         int increment = content.length() + bandwidth;
-        System.out.println("increment");
-        System.out.println(increment);
         if (increment + content.length() >= finalStrLen) {
             increment = finalStrLen;
             this.complete = true;

@@ -17,7 +17,9 @@ public class RelaySatellite extends Satellite {
     }
 
     @Override
-    public void setPos(Angle angle) {
+    public void updatePos() {
+        double displacement = this.getSpeed() / this.getHeight();
+        Angle angle = Angle.fromRadians(displacement);
         Angle newAngle;
         if ((position.compareTo(Angle.fromDegrees(345)) == -1 &&
         position.compareTo(Angle.fromDegrees(190)) >= 0) &&

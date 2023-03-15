@@ -21,6 +21,14 @@ public class StandardSatellite extends FileSatellite {
     }
 
     @Override
+    public boolean isValidTransferType(Machine m) {
+        if (m instanceof DesktopDevice) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
     public int getSendSpeed() {
         return sendSpeed;
     }
