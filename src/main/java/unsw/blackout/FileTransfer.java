@@ -5,7 +5,7 @@ import unsw.blackout.FileTransferException.*;
 import java.util.ArrayList;
 import java.util.List;
 
-interface FileTransfer extends TransferProgress{
+interface FileTransfer extends TransferProgress {
     public String getId();
 
     public List<File> getFile();
