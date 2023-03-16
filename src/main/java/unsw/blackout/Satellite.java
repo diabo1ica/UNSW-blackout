@@ -10,7 +10,7 @@ public class Satellite extends Machine {
         this.speed = speed;
     }
 
-    public void updatePos() {
+    public void updatePos(WorldState ws) {
         double displacement = this.getSpeed() / this.getHeight();
         Angle angle = Angle.fromRadians(displacement);
         Angle newAngle = position.add(angle);

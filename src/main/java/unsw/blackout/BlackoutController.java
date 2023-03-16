@@ -82,7 +82,7 @@ public class BlackoutController {
 
     public EntityInfoResponse getInfo(String id) {
         // TODO: Task 1h)
-        Machine m = findMachById(id);
+        Machine m = ws.findMachById(id);
         Map<String, FileInfoResponse> fileMap = new HashMap<>();
         if (!(m instanceof RelaySatellite)) {
             FileTransfer ft = (FileTransfer) m;
@@ -99,9 +99,15 @@ public class BlackoutController {
     public void simulate() {
         // TODO: Task 2a)
         for (Satellite s: ws.getSatellites()) {
-            s.updatePos();
+            s.updatePos(ws);
         }
-        ws.updateFileState();
+        ws.resetBwState();
+        for (FileTransfer ft: ws.fileTransferList()) {
+            ws.setBandwidthState(communicableEntitiesInRange(ft.getId()), ft);
+        }
+        for (FileTransfer ft: ws.fileTransferList()) {
+            ws.updateFileState(ft);
+        }
     }
 
     /**
@@ -113,11 +119,12 @@ public class BlackoutController {
             simulate();
         }
     }
-
+    
+    // TODO: Satellite and device
     public List<String> communicableEntitiesInRange(String id) {
         // TODO: Task 2 b)
-        Machine mach = findMachById(id);
-        List<String> list = entitiesInRange(mach);
+        Machine mach = ws.findMachById(id);
+        List<String> list = entitiesInRange(mach, mach);
         if (list.contains(mach.getId())) {
             list.remove(mach.getId());
         }
@@ -125,13 +132,13 @@ public class BlackoutController {
     }
 
     // TODO: If desktop 
-    public List<String> entitiesInRange(Machine mach) {
+    public List<String> entitiesInRange(Machine src, Machine mach) {
         List<String> entityList = new ArrayList<String>();
         for (Machine m: ws.getMachineList()) {
-            if (mach.visibleInRange(m) && !entityList.contains(m.getId())) {
+            if (mach.visibleInRange(m) && src.isValidTransferType(m) && !entityList.contains(m.getId())) {
                 entityList.add(m.getId());
                 if (m instanceof RelaySatellite) {
-                    entityList.addAll(entitiesInRange(m));
+                    entityList.addAll(entitiesInRange(mach, m));
                 }
             }
         }
@@ -140,8 +147,8 @@ public class BlackoutController {
 
     public void sendFile(String fileName, String fromId, String toId) throws FileTransferException {
         // TODO: Task 2 c)
-        Machine from = findMachById(fromId);
-        Machine to = findMachById(toId);
+        Machine from = ws.findMachById(fromId);
+        Machine to = ws.findMachById(toId);
         if (!(from instanceof FileTransfer) || !(to instanceof FileTransfer) ||
         (!communicableEntitiesInRange(fromId).contains(toId))) {
             return;
@@ -149,7 +156,7 @@ public class BlackoutController {
         FileTransfer ftFrom = (FileTransfer) from;
         FileTransfer ftTo = (FileTransfer) to;
         
-        File file = ftFrom.getFileInFrom(fileName);
+        File file = ftFrom.getFileFromSrc(fileName);
         ftFrom.checkBandwidthConstraintFrom();
         ftTo.checkBandwidthConstraintTo();
         ftTo.checkFileAlreadyExists(fileName);
@@ -172,10 +179,6 @@ public class BlackoutController {
         // If you are not completing Task 3 you can leave this method blank :)
     }
 
-    public Machine findMachById(String id) {
-        return ws.getMachineList().stream().filter(x -> x.getId().equals(id)).findAny().get();
-    }
-
     public Satellite getSatelliteById(String id) {
         return ws.getSatellites().stream().filter(x -> x.getId().equals(id)).findAny().get();
     }
@@ -187,12 +190,5 @@ public class BlackoutController {
     public String getType(Machine machine) {
         String type = String.valueOf(machine).substring(14);
         return type.split("@")[0];
-    }
-
-    public int div(int a, int b) {
-        if (b == 0) {
-            b = 1;
-        }
-        return a/b;
     }
 }

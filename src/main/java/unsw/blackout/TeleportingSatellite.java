@@ -2,7 +2,7 @@ package unsw.blackout;
 
 import unsw.utils.Angle;
 
-public class TeleportingSatellite extends FileSatellite {
+public class TeleportingSatellite extends FileSatellite implements TeleportAnomally{
     /*
      * range = 200000;
      * speed = 1000 anticlockwise;
@@ -20,9 +20,8 @@ public class TeleportingSatellite extends FileSatellite {
         this.maxFileCapacity = 200;
     }
 
-    // TODO: write compare to 180 degrees method
     @Override
-    public void updatePos() {
+    public void updatePos(WorldState ws) {
         double displacement = this.getSpeed() / this.getHeight();
         Angle angle = Angle.fromRadians(displacement);
         Angle newAngle = position.add(angle);
@@ -31,6 +30,7 @@ public class TeleportingSatellite extends FileSatellite {
         (position.compareTo(Angle.fromDegrees(180)) >= 0 &&
         newAngle.compareTo(Angle.fromDegrees(180)) <= 0)) {
             newAngle = Angle.fromDegrees(0);
+            teleportFiles(ws);
             changeDirection();
         }
         if (newAngle.compareTo(Angle.fromDegrees(0)) == -1) {
@@ -40,6 +40,13 @@ public class TeleportingSatellite extends FileSatellite {
             newAngle = newAngle.subtract(Angle.fromDegrees(360));
         }
         position = newAngle;
+    }
+
+    private void teleportFiles(WorldState ws) {
+        FileTransfer ft = (FileTransfer) this;
+        for (FileProgress fp: this.getListProgress()) {
+            teleportOccurence(ws, ft, fp);
+        }
     }
 
     public void changeDirection() {

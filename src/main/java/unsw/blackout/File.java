@@ -42,8 +42,4 @@ public class File {
         this.complete = true;
     }
 
-    public boolean checkProgress(String content) {
-        return (this.content.length() >= content.length());
-    }
-
 }

@@ -15,62 +15,38 @@ public class WorldState {
         bwState = new ArrayList<BandwidthState>();
     }
 
-    public void updateFileState() {
-        setBandwidthStateAll();
-        for (FileTransfer ft: fileTransferList()) {
-            // TODO: fix this
-            BandwidthState bws;
+    // Move to file transfer
+    public void updateFileState(FileTransfer ft) {
+        BandwidthState bws;
+        try {
+            bws = this.getBwState(ft.getId());
+        }
+        catch (Exception e) {
+            return;
+        }
+        for (File f: ft.getIncompleteFiles()) {
             try {
-                bws = this.getBwState(ft.getId());
+                FileProgress fp = ft.getFileProgByTypeName(f.getName(), "from");
+                String id = fp.getId();
+                BandwidthState bwsFrom = this.getBwState(id);
+                ft.updateFile(f, fp, bws.getReceiveBandwidth(), bwsFrom.getSendBandwidth());
             }
             catch (Exception e) {
                 continue;
-            }
-            for (File f: ft.getIncompleteFiles()) {
-                List<FileProgress> fromFp = ft.getFileProgressByType("from");
-                FileProgress fp = fromFp.stream().filter(n -> n.getFileName().equals(f.getName())).findAny().get();
-                String id = fp.getId();
-                BandwidthState bwsFrom = this.getBwState(id);
-                File file = fp.getFile();
-                int bandwidth = Math.min(bws.getReceiveBandwidth(), bwsFrom.getSendBandwidth());
-                f.addContent(file.getContent(), bandwidth);
-                if (f.isComplete()) {
-                    ft.removeProgress(f.getName());
-                }
             }
         }
     }
 
-    public void setBandwidthStateAll() {
-        this.resetBwState();
-        for (FileTransfer ft: fileTransferList()) {
-            int nReceive, nSend;
-            int sendSpeed = 0;
-            int receiveSpeed = 0;
+    public void setBandwidthState(List<String> srcListReachable, FileTransfer ft) {
+        int sendBandwidth = ft.currentBandwidth(srcListReachable,"from");;
+        int receiveBandwidth = ft.currentBandwidth(srcListReachable, "to");;
 
-            try {
-                nReceive = ft.getFileProgressByType("from").size();
-                receiveSpeed = ft.getReceiveSpeed();
-            }
-            catch (Exception e) {
-                nReceive = 0;
-            }
-
-            try {
-                nSend = ft.getFileProgressByType("to").size();
-                sendSpeed = ft.getSendSpeed();
-            }
-            catch (Exception e) {
-                nSend = 0;
-            }
-
-            if ((nReceive == 0 && nSend == 0) || ft instanceof RelaySatellite) {
-                continue;
-            }
-
-            BandwidthState bws = new BandwidthState(ft.getId(), div(receiveSpeed, nReceive), div(sendSpeed, nSend));
-            this.addBwState(bws);
+        if ((sendBandwidth == 0 && receiveBandwidth == 0)) {
+            return;
         }
+
+        BandwidthState bws = new BandwidthState(ft.getId(), receiveBandwidth, sendBandwidth);
+        this.addBwState(bws);
     }
 
     public void addBwState(BandwidthState bws) {
@@ -116,6 +92,10 @@ public class WorldState {
         return listOfMachines;
     }
 
+    public Machine findMachById(String id) {
+        return this.getMachineList().stream().filter(x -> x.getId().equals(id)).findAny().get();
+    }
+
     public List<FileTransfer> fileTransferList() {
         List<Machine> fileMachs =  this.getMachineList().stream().filter(m -> m instanceof FileTransfer)
         .collect(Collectors.toList());
@@ -127,10 +107,16 @@ public class WorldState {
         return fileTransferList;
     }
 
-    public int div(int a, int b) {
-        if (b == 0) {
-            b = 1;
-        }
-        return a/b;
+    public void teleportIncomingFiles(FileTransfer ft, FileProgress fp) throws FileTransferException {
+        FileTransfer src = (FileTransfer) findMachById(fp.getId());
+        //File file = src.getFileFromSrc(fp.getFileName());
+        ft.teleportFileTransfer(src, ft, fp.getFileName());
+
+    }
+
+    public void teleportSendingFiles(FileTransfer ft, FileProgress fp) throws FileTransferException {
+        FileTransfer end = (FileTransfer) findMachById(fp.getId());
+        //File file = ft.getFileFromSrc(fp.getFileName());
+        ft.teleportFileTransfer(ft, end, fp.getFileName());
     }
 }

@@ -17,7 +17,7 @@ public class RelaySatellite extends Satellite {
     }
 
     @Override
-    public void updatePos() {
+    public void updatePos(WorldState ws) {
         double displacement = this.getSpeed() / this.getHeight();
         Angle angle = Angle.fromRadians(displacement);
         Angle newAngle;

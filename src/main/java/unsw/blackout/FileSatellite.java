@@ -27,6 +27,10 @@ abstract class FileSatellite extends Satellite implements FileTransfer{
         return files;
     }
 
+    public void removeFile(File file) {
+        files.remove(file);
+    }
+
     public List<FileProgress> getListProgress() {
         return fListProgress;
     }

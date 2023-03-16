@@ -60,16 +60,13 @@ public class Task2ExampleTests {
         controller.createDevice("DeviceC", "HandheldDevice", Angle.fromDegrees(320));
 
         String msg = "Hey";
-        System.out.println("1");
         controller.addFileToDevice("DeviceC", "FileAlpha", msg);
         assertThrows(FileTransferException.VirtualFileNotFoundException.class,
                 () -> controller.sendFile("NonExistentFile", "DeviceC", "Satellite1"));
-                System.out.println("2");
         assertDoesNotThrow(() -> controller.sendFile("FileAlpha", "DeviceC", "Satellite1"));
         assertEquals(new FileInfoResponse("FileAlpha", "", msg.length(), false),
                 controller.getInfo("Satellite1").getFiles().get("FileAlpha"));
         controller.simulate(msg.length() * 2);
-        System.out.println("3");
         assertThrows(FileTransferException.VirtualFileAlreadyExistsException.class,
                 () -> controller.sendFile("FileAlpha", "DeviceC", "Satellite1"));
     }

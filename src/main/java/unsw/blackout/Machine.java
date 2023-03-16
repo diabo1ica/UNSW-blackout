@@ -3,7 +3,7 @@ package unsw.blackout;
 import unsw.utils.Angle;
 import unsw.utils.MathsHelper;
 
-abstract class Machine implements ConnectionBehaviour{
+public class Machine implements ConnectionBehaviour {
     private String id;
     private double height;
     protected Angle position;

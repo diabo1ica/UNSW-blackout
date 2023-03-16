@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import unsw.utils.Angle;
 
-abstract class Device extends Machine implements FileTransfer{
+public class Device extends Machine implements FileTransfer{
     private List<File> files = new ArrayList<File>();
     private List<FileProgress> fListProgress = new ArrayList<FileProgress>();
     // 69911 jupiter radians
@@ -19,6 +19,10 @@ abstract class Device extends Machine implements FileTransfer{
 
     public List<File> getFile() {
         return files;
+    }
+
+    public void removeFile(File file) {
+        files.remove(file);
     }
 
     public List<FileProgress> getListProgress() {
