@@ -28,8 +28,9 @@ public class WorldState {
             try {
                 FileProgress fp = ft.getFileProgByTypeName(f.getName(), "from");
                 String id = fp.getId();
+                FileTransfer src = (FileTransfer) findMachById(id);
                 BandwidthState bwsFrom = this.getBwState(id);
-                ft.updateFile(f, fp, bws.getReceiveBandwidth(), bwsFrom.getSendBandwidth());
+                ft.updateFile(f, fp, src, bws.getReceiveBandwidth(), bwsFrom.getSendBandwidth());
             }
             catch (Exception e) {
                 continue;
@@ -38,8 +39,8 @@ public class WorldState {
     }
 
     public void setBandwidthState(List<String> srcListReachable, FileTransfer ft) {
-        int sendBandwidth = ft.currentBandwidth(srcListReachable,"from");;
-        int receiveBandwidth = ft.currentBandwidth(srcListReachable, "to");;
+        int sendBandwidth = ft.currentBandwidth(srcListReachable,"to");;
+        int receiveBandwidth = ft.currentBandwidth(srcListReachable, "from");;
 
         if ((sendBandwidth == 0 && receiveBandwidth == 0)) {
             return;
@@ -109,14 +110,13 @@ public class WorldState {
 
     public void teleportIncomingFiles(FileTransfer ft, FileProgress fp) throws FileTransferException {
         FileTransfer src = (FileTransfer) findMachById(fp.getId());
-        //File file = src.getFileFromSrc(fp.getFileName());
         ft.teleportFileTransfer(src, ft, fp.getFileName());
-
+        src.removeProgress(fp.getFileName(), "to");
     }
 
     public void teleportSendingFiles(FileTransfer ft, FileProgress fp) throws FileTransferException {
         FileTransfer end = (FileTransfer) findMachById(fp.getId());
-        //File file = ft.getFileFromSrc(fp.getFileName());
         ft.teleportFileTransfer(ft, end, fp.getFileName());
+        end.removeProgress(fp.getFileName(), "from");
     }
 }

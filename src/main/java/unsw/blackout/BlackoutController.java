@@ -138,7 +138,7 @@ public class BlackoutController {
             if (mach.visibleInRange(m) && src.isValidTransferType(m) && !entityList.contains(m.getId())) {
                 entityList.add(m.getId());
                 if (m instanceof RelaySatellite) {
-                    entityList.addAll(entitiesInRange(mach, m));
+                    entityList.addAll(entitiesInRange(src, m));
                 }
             }
         }

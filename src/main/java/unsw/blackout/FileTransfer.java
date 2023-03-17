@@ -62,8 +62,8 @@ interface FileTransfer extends TransferProgress {
     }
     
     public default int currentBandwidth(List<String> srcListReachable, String type) {
-        int nReceive = 0;
-        int receiveSpeed = 0;
+        int nFile = 0;
+        int bandSpeed = 0;
         try {
             List<FileProgress> progList = this.getFileProgressByType(type);
             for (FileProgress fp: progList) {
@@ -71,24 +71,26 @@ interface FileTransfer extends TransferProgress {
                     progList.remove(fp);
                     File file = fp.getFile();
                     this.removeFile(file);
-                    this.removeProgress(file.getName());
+                    this.removeProgress(file.getName(), type);
                 }
             }
-            nReceive = progList.size();
-            receiveSpeed = this.getReceiveSpeed();
+            nFile = progList.size();
+            bandSpeed = this.getReceiveSpeed();
         }
         catch (Exception e) {
             return 0;
         }
-        return Helper.div(receiveSpeed, nReceive);
+        return Helper.div(bandSpeed, nFile);
     }
 
-    public default void updateFile(File f, FileProgress fp, int rBandwidth, int sBandwidth) {
+    public default void updateFile(File f, FileProgress fp, FileTransfer src, int rBandwidth, int sBandwidth) {
         File file = fp.getFile();
         int bandwidth = Math.min(rBandwidth, sBandwidth);
         f.addContent(file.getContent(), bandwidth);
+        src.getListProgress().forEach((fe) -> {System.out.println(fe.getFileName() + fe.getType() + fe.getId());});
         if (f.isComplete()) {
-            this.removeProgress(file.getName());
+            this.removeProgress(file.getName(), "from");
+            src.removeProgress(file.getName(), "to");
         }
     }
 
@@ -96,15 +98,14 @@ interface FileTransfer extends TransferProgress {
     String fileName) throws FileTransferException {
         File srcFile = src.getFileFromSrc(fileName);
         File endFile = end.getFileFromSrc(fileName);
-        String teleportedContent = srcFile.getContent().replace("t", "");
-        File teleportedFile = new File(fileName, teleportedContent, teleportedContent.length(), true);
+        String teleportedSrcContent = srcFile.getContent().replace("t", "");
+        File teleportedFile = new File(fileName, teleportedSrcContent, teleportedSrcContent.length(), true);
         end.removeFile(endFile);
         if (src instanceof Device) {
             src.removeFile(srcFile);
             src.setFile(teleportedFile);
+            return;
         }
-        else {
-            end.setFile(teleportedFile);
-        }
+        end.setFile(teleportedFile);
     }
 }

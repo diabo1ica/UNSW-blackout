@@ -37,8 +37,12 @@ public class Device extends Machine implements FileTransfer{
         fListProgress.add(fileProgress);
     }
 
-    public void removeProgress(String fileName) {
-        fListProgress.removeIf(fp -> fp.getFileName().equals(fileName));
+    public void removeProgress(String fileName, String type) {
+        fListProgress.removeIf(fp -> fp.getFileName().equals(fileName) && fp.getType().equals(type));
+    }
+
+    public void resetProgress() {
+        fListProgress = new ArrayList<FileProgress>();
     }
 
     @Override

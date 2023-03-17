@@ -19,5 +19,7 @@ interface TransferProgress {
         return fromFp.stream().filter(n -> n.getFileName().equals(name)).findAny().get();
     }
 
-    public void removeProgress(String fileName);
+    public void removeProgress(String fileName, String type);
+
+    public void resetProgress();
 }

@@ -47,6 +47,7 @@ public class TeleportingSatellite extends FileSatellite implements TeleportAnoma
         for (FileProgress fp: this.getListProgress()) {
             teleportOccurence(ws, ft, fp);
         }
+        this.resetProgress();
     }
 
     public void changeDirection() {

@@ -89,6 +89,43 @@ public class Task2ExampleTests {
     }
 
     @Test
+    public void testTeleportBehaviour() {
+        BlackoutController controller = new BlackoutController();
+        controller.createSatellite("ShroudStep", "TeleportingSatellite", 15000 + RADIUS_OF_JUPITER, Angle.fromDegrees(175.1));
+        controller.createDevice("src", "LaptopDevice", Angle.fromDegrees(175));
+        controller.addFileToDevice("src", "Homework", "tttttttttt177013");
+        assertDoesNotThrow(() -> controller.sendFile("Homework", "src", "ShroudStep"));
+        controller.simulate(2);
+
+        controller.createSatellite("Satellite1", "StandardSatellite", 10000 + RADIUS_OF_JUPITER, Angle.fromDegrees(150));
+        controller.createDevice("Obama's phone", "HandheldDevice", Angle.fromDegrees(160));
+        assertDoesNotThrow(() -> controller.sendFile("Homework", "ShroudStep", "Satellite1"));
+        assertDoesNotThrow(() -> controller.sendFile("Homework", "ShroudStep", "Obama's phone"));
+        controller.simulate(1);
+        // Check correct bandwith distribution and bottleneck 
+        assertEquals(new FileInfoResponse("Homework", "t", 16, false), controller.getInfo("Satellite1")
+        .getFiles().get("Homework"));
+        assertEquals(new FileInfoResponse("Homework", "ttttttt", 16, false), controller.getInfo("Obama's phone")
+        .getFiles().get("Homework"));
+        // Obama's phone finish downloading "Homework" 177013
+        controller.simulate(3);
+        // Create new device add file and transfer to teleporting satellite
+        controller.createDevice("Be ballin", "HandheldDevice", Angle.fromDegrees(180));
+        controller.addFileToDevice("Be ballin", "Baller", "tttttttttt177013");
+        assertDoesNotThrow(() -> controller.sendFile("Baller", "Be ballin", "ShroudStep"));
+        controller.simulate(1);
+        // assert file download in progress
+        assertEquals(new FileInfoResponse("Baller", "tttttttttt17701", 16, false),
+        controller.getInfo("ShroudStep").getFiles().get("Baller"));
+        controller.simulate(1);
+        // Assert file deleted from Teleporting Satellite
+        assertEquals(controller.getInfo("ShroudStep").getFiles().size(), 1);
+        // Assert file corrupted in device
+        assertEquals(controller.getInfo("Be ballin").getFiles().get("Baller"),
+        new FileInfoResponse("Baller", "177013", 6, true));
+    }
+
+    @Test
     public void testExample() {
         // Task 2
         // Example from the specification
